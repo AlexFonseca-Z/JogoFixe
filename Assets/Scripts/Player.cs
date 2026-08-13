@@ -5,9 +5,15 @@ public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
+    public LayerMask groundLayer;
 
 
     private Rigidbody2D rb;
+    private bool isGrounded;
+
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -27,9 +33,15 @@ public class Player : MonoBehaviour
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
         //Jumping
-        if (Keyboard.current.spaceKey.wasPressedThisFrame && Mathf.Abs(rb.linearVelocity.y) < 0.001f || Keyboard.current.wKey.wasPressedThisFrame && Mathf.Abs(rb.linearVelocity.y) < 0.001f)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded || Keyboard.current.wKey.wasPressedThisFrame && isGrounded)
         {
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
         }
+    }
+
+    private void FixedUpdate()
+    {
+        //Ground Check
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
     }
 }
