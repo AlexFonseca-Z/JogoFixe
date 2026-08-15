@@ -5,15 +5,18 @@ public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public LayerMask groundLayer;
 
 
+    [SerializeField] private Animator animator;
+    [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private float groundCheckRadius = 0.2f;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private LayerMask groundLayer;
     private Rigidbody2D rb;
-    private bool isGrounded;
+    private bool isGrounded = false;
+    private float moveInput;
+    private float xPosLastFrame;
 
-    private Animator animator;
 
     void Start()
     {
@@ -22,8 +25,22 @@ public class Player : MonoBehaviour
     }
     void Update()
     {
-        //Side to Side Movement
-        float moveInput = 0f;
+        Movement();
+        Animations();
+    }
+
+    private void FixedUpdate()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+        animator.SetFloat("xVelocity", Mathf.Abs(rb.linearVelocity.x));
+    }
+
+    private void Movement()
+    {
+         //Side to Side Movement
+        moveInput = 0f;
         if (Keyboard.current.leftArrowKey.isPressed || Keyboard.current.aKey.isPressed)
         {
             moveInput = -1f;
@@ -32,46 +49,41 @@ public class Player : MonoBehaviour
         {
             moveInput = 1f;
         }
-        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
         //Jumping
-        if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded || Keyboard.current.wKey.wasPressedThisFrame && isGrounded)
+        if ((Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.wKey.wasPressedThisFrame) && isGrounded)
         {
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
         }
-        SetAnimation(moveInput);
     }
 
-    private void FixedUpdate()
+    private void Animations()
     {
-        //Ground Check
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-    }
+        
+        //Running Statement
 
-    private void SetAnimation(float moveInput)
-    {
-        if(isGrounded)
+        if (moveInput != 0)
         {
-            if(moveInput != 0)
-            {
-                animator.Play("Player_Run");
-            }
-            else
-            {
-                animator.Play("Player_Idle");
-            }
+            animator.SetBool("isRunning", true);
         }
         else
         {
-            if(rb.linearVelocity.y > 0)
-            {
-                animator.Play("Player_Jump");
-            }
-            else
-            {
-                animator.Play("Player_Fall");
-            }
+            animator.SetBool("isRunning", false);
         }
-        
+
+        //Flip Character
+
+        if(transform.position.x > xPosLastFrame)
+        {
+            // Flip the sprite to face right
+            spriteRenderer.flipX = false;
+        }
+        else if (transform.position.x < xPosLastFrame)
+        {
+            // Flip the sprite to face left
+            spriteRenderer.flipX = true;
+        }
+
+        xPosLastFrame = transform.position.x;
     }
 }
